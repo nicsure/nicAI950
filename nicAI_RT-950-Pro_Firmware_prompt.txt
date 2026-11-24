@@ -1,0 +1,450 @@
+here are the GPIO assignments
+
+// GPIOA
+#define VOX_ADC_TYPE     (GPIOA) // microphone audio envelope for vox detection (ADC)
+#define VOX_ADC_PIN      (GPIO_PINS_0)
+
+#define BATT_ADC_TYPE    (GPIOA) // battery voltage measurement (ADC) 12 bit 0 = 0V 4095 = 12 V
+#define BATT_ADC_PIN     (GPIO_PINS_1)
+
+#define AUDIO_IN_TYPE    (GPIOA) // audio aquisition ADC requites MUTE to be off to work, if the speaker needs muting, turn off the amplifier
+#define AUDIO_IN_PIN     (GPIO_PINS_2)
+
+#define BEEP_TYPE        (GPIOA) // use PWM/PCM for injection of audio into speaker out and microphone in depending on the path selected
+#define BEEP_PIN         (GPIO_PINS_4)
+
+#define APC_TYPE         (GPIOA) // DAC output for RF output power level. 12 bit. 0 = 0%, 4095 = 100%
+#define APC_PIN          (GPIO_PINS_5)
+
+#define SI4732_RST_TYPE  (GPIOA) // reset pin for si4732
+#define SI4732_RST_PIN   (GPIO_PINS_6)
+
+#define SI4732_FM_TYPE   (GPIOA) // filter stage for si4732 when operating on the FM Broadcast band
+#define SI4732_FM_PIN    (GPIO_PINS_7) // active low
+
+#define GPS_PWR_TYPE     (GPIOA) // power control for GPS module (active low)
+#define GPS_PWR_PIN      (GPIO_PINS_8) // active low
+
+#define BTLE_RX_TYPE     (GPIOA) // uart 9600 baud for the bluetooth LE module RX data
+#define BTLE_RX_PIN      (GPIO_PINS_9)
+
+#define BTLE_TX_TYPE     (GPIOA) // uart 9600 baud for the bluetooth LE module TX data
+#define BTLE_TX_PIN      (GPIO_PINS_10) // nothing special needs to be done for Bluetooth LE, it just acts as a regular UART device
+
+#define PWR_ON_TYPE      (GPIOA) // set high by the bootloader, when set low and the power switch if OFF, cuts power to the device
+#define PWR_ON_PIN       (GPIO_PINS_11)
+
+#define KEY_SK3_TYPE     (GPIOA) // side key 3 input, below SK2
+#define KEY_SK3_PIN      (GPIO_PINS_12) // active low
+
+#define XB_BYPASS_TYPE   (GPIOA) // required for cross band repeater functionality, connects both BK4829 audio paths (active low)
+#define XB_BYPASS_PIN    (GPIO_PINS_15) // active low
+
+
+// GPIOB
+#define VHF_RX_TYPE      (GPIOB) // RF filter stage for BK4829 VHF receive >70 MHz <280 MHz
+#define VHF_RX_PIN       (GPIO_PINS_0) // active high
+
+#define VHF_TX_TYPE      (GPIOB) // RF filter stage for BK4829 VHF transmit >70 MHz <280 MHz
+#define VHF_TX_PIN       (GPIO_PINS_1) // active high
+
+#define KEY_LED_TYPE     (GPIOB) // turns on the keypad backlight LED when high
+#define KEY_LED_PIN      (GPIO_PINS_3)
+
+#define ENCODER1_TYPE    (GPIOB) // rotary encoder 1 input
+#define ENCODER1_PIN     (GPIO_PINS_4)
+
+#define ENCODER2_TYPE    (GPIOB) // rotary encoder 2 input
+#define ENCODER2_PIN     (GPIO_PINS_5)
+
+#define SI4732_SCK_TYPE  (GPIOB) // si4732 I2C clock
+#define SI4732_SCK_PIN   (GPIO_PINS_6)
+
+#define SI4732_SDA_TYPE  (GPIOB) // si4732 I2C data
+#define SI4732_SDA_PIN   (GPIO_PINS_7)
+
+#define MIC_EN_TYPE      (GPIOB) // enable the internal microphone (active low) should be disabled when external microphone is used
+#define MIC_EN_PIN       (GPIO_PINS_8) // active low
+
+#define BT_PWR_TYPE      (GPIOB) // power control for the Bluetooth LE module (active high)
+#define BT_PWR_PIN       (GPIO_PINS_9) // active high
+
+#define GPS_RX_TYPE      (GPIOB) // GPS module RX data regular UART 9600 baud GPS is standard NMEA protocol
+#define GPS_RX_PIN       (GPIO_PINS_10)
+
+#define GPS_TX_TYPE      (GPIOB) // GPS module TX data regular UART 9600 baud
+#define GPS_TX_PIN       (GPIO_PINS_11)
+
+#define FLASH_CS_TYPE    (GPIOB) // 4MB flash chip select pin
+#define FLASH_CS_PIN     (GPIO_PINS_12)
+
+#define FLASH_SCK_TYPE   (GPIOB) // 4MB flash chip serial clock
+#define FLASH_SCK_PIN    (GPIO_PINS_13)
+
+#define FLASH_MISO_TYPE  (GPIOB) // 4MB flash chip MISO
+#define FLASH_MISO_PIN   (GPIO_PINS_14)
+
+#define FLASH_MOSI_TYPE  (GPIOB) // 4MB flash chip MOSI
+#define FLASH_MOSI_PIN   (GPIO_PINS_15)
+
+
+// keypad matrix information
+//
+// rows are labeled LB0-LB3, columns are labeled K0-K3
+// to scan, activate rows one by one and read the columns to detect key presses
+// to activate a row, set it LOW, then read the columns to detect which key is pressed
+// there are 20 buttons, the first 16 are arranged in the 4x4 matrix
+// the last four are special, to read them, deactivate all rows and read the corresponding column pins
+// the last row must be read last and override any matrix key detection to avoid false detectiuon of the regular matrix keys
+
+/*
+const u8 matrix_codes[5][4] = {
+    // K0, K1, K2, K3
+    {KEY_MENU, KEY_ABC, KEY_EXIT, KEY_VM}, // LB0
+    {KEY_3, KEY_6, KEY_9, KEY_HASH}, // LB1
+    {KEY_2, KEY_5, KEY_8, KEY_0}, // LB2
+    {KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT}, // LB3
+    {KEY_1, KEY_4, KEY_7, KEY_STAR} // all LBs deactivated must be read last and take precedence over regular matrix key detection
+};
+
+// keys can be assigned to anything, but typically
+// MENU key is typically used to access the main menu
+// EXIT key is typically used to exit the current menu or operation
+// UP and DOWN keys are typically used for navigation within menus or stepping through options and frequency adjustments
+// LEFT and RIGHT keys are typically used for navigation or adjustment within menus or for coarser frequency adjustments
+// ABC key is used to switch between the three VFOs
+// VM key is used to switch between frequency and channel modes
+// PTT is used for transmitting, but SK1 and SK2 maybe optionally used for transmit on VFO-B and VFO-C (multi PTT)
+*/
+
+
+// GPIOC
+#define KEYPAD_LB0_TYPE  (GPIOC)
+#define KEYPAD_LB0_PIN   (GPIO_PINS_0)
+
+#define KEYPAD_LB1_TYPE  (GPIOC)
+#define KEYPAD_LB1_PIN   (GPIO_PINS_1)
+
+#define KEYPAD_LB2_TYPE  (GPIOC)
+#define KEYPAD_LB2_PIN   (GPIO_PINS_2)
+
+#define KEYPAD_LB3_TYPE  (GPIOC)
+#define KEYPAD_LB3_PIN   (GPIO_PINS_3)
+
+#define HF_RELAY_TYPE    (GPIOC) // required for operation on HF bands RX and TX, care must be taken that this is not rapidly switched
+#define HF_RELAY_PIN     (GPIO_PINS_4) // low=U/V, high=HF
+
+#define SI4732_SW_TYPE   (GPIOC) // filter stage for si4732 when operating on the short wave & MW/LW bands (active high)
+#define SI4732_SW_PIN    (GPIO_PINS_5) // filter stage for si4732 when operating on the short wave & MW/LW bands (active high)
+
+#define LCD_LED_TYPE     (GPIOC) // LCD backlight control use a PWM to adjust brightness
+#define LCD_LED_PIN      (GPIO_PINS_6)
+
+#define BEEP_PATH_TYPE   (GPIOC) // selects the audio path for the beep signal (PA4)
+#define BEEP_PATH_PIN    (GPIO_PINS_12) // low=SPEAKER, high=MIC
+
+#define RED_LED_TYPE     (GPIOC) // red LED indicator, typically used while transmitting
+#define RED_LED_PIN      (GPIO_PINS_13) // active high
+
+#define GREEN_LED_TYPE   (GPIOC) // green LED indicator, typically used while receiving (squelch opened)
+#define GREEN_LED_PIN    (GPIO_PINS_14) // active high
+
+// note, the external speaker microphone DOES NOT get muted when the speaker mute is active,
+// it is needed to turn the amplifier off to mute sound when the external mic is present
+#define EXT_EAR_TYPE     (GPIOC) // input pin for external speaker microphone detection
+#define EXT_EAR_PIN      (GPIO_PINS_15) // ext mic is present if this reads low
+
+
+
+
+// GPIOD
+#define LCD_WR_TYPE      (GPIOD) // ST7789 write control
+#define LCD_WR_PIN       (GPIO_PINS_0)
+
+#define LCD_CS_TYPE      (GPIOD) // ST7789 chip select
+#define LCD_CS_PIN       (GPIO_PINS_1)
+
+#define LCD_RST_TYPE     (GPIOD) // ST7789 reset control
+#define LCD_RST_PIN      (GPIO_PINS_2)
+
+#define LCD_RS_TYPE      (GPIOD) // ST7789 register select (command/data)
+#define LCD_RS_PIN       (GPIO_PINS_3)
+
+#define KEYPAD_K3_TYPE   (GPIOD)
+#define KEYPAD_K3_PIN    (GPIO_PINS_4)
+
+#define KEYPAD_K2_TYPE   (GPIOD)
+#define KEYPAD_K2_PIN    (GPIO_PINS_5)
+
+#define KEYPAD_K1_TYPE   (GPIOD)
+#define KEYPAD_K1_PIN    (GPIO_PINS_6)
+
+#define KEYPAD_K0_TYPE   (GPIOD)
+#define KEYPAD_K0_PIN    (GPIO_PINS_7)
+
+#define LCD_DB0_TYPE     (GPIOD) // lcd parallel data bus bits
+#define LCD_DB0_PIN      (GPIO_PINS_8)
+
+#define LCD_DB1_TYPE     (GPIOD)
+#define LCD_DB1_PIN      (GPIO_PINS_9)
+
+#define LCD_DB2_TYPE     (GPIOD)
+#define LCD_DB2_PIN      (GPIO_PINS_10)
+
+#define LCD_DB3_TYPE     (GPIOD)
+#define LCD_DB3_PIN      (GPIO_PINS_11)
+
+#define LCD_DB4_TYPE     (GPIOD)
+#define LCD_DB4_PIN      (GPIO_PINS_12)
+
+#define LCD_DB5_TYPE     (GPIOD)
+#define LCD_DB5_PIN      (GPIO_PINS_13)
+
+#define LCD_DB6_TYPE     (GPIOD)
+#define LCD_DB6_PIN      (GPIO_PINS_14)
+
+#define LCD_DB7_TYPE     (GPIOD)
+#define LCD_DB7_PIN      (GPIO_PINS_15)
+
+
+// GPIOE
+#define KEY_PWR_SW_TYPE  (GPIOE) // power switch is ON when low, is OFF when high
+#define KEY_PWR_SW_PIN   (GPIO_PINS_0)
+
+#define MUTE_TYPE        (GPIOE) // mutes the main speaker, but does not affect the external speaker microphone
+#define MUTE_PIN         (GPIO_PINS_1) // HIGH=muted  LOW=unmuted
+
+#define KEY_SK1_TYPE     (GPIOE) // side key 1 (below PTT), is active low
+#define KEY_SK1_PIN      (GPIO_PINS_2)
+
+#define KEY_PTT_TYPE     (GPIOE) // push-to-talk key, is active low
+#define KEY_PTT_PIN      (GPIO_PINS_3)
+
+#define AMP_PWR_TYPE     (GPIOE) // amplifier power control, active high
+#define AMP_PWR_PIN      (GPIO_PINS_4) // active high
+
+#define KEY_SK2_TYPE     (GPIOE) // side key 2 (below SK1), is active low
+#define KEY_SK2_PIN      (GPIO_PINS_5)
+
+#define EXT_PTT_TYPE     (GPIOE) // external push-to-talk key, on external microphone/headset
+#define EXT_PTT_PIN      (GPIO_PINS_6) // active low
+
+#define UHF_TX_TYPE      (GPIOE) // Filter stage for UHF transmitter
+#define UHF_TX_PIN       (GPIO_PINS_7) // active high
+
+#define BK4829A_SCN_TYPE (GPIOE) // BK4829A chip select
+#define BK4829A_SCN_PIN  (GPIO_PINS_8)
+
+#define BK4829_SCK_TYPE  (GPIOE) // BK4829 serial clock (shared between BK4829A and BK4829B)
+#define BK4829_SCK_PIN   (GPIO_PINS_10) 
+
+#define BK4829_SDA_TYPE  (GPIOE) // BK4829 serial data (shared between BK4829A and BK4829B)
+#define BK4829_SDA_PIN   (GPIO_PINS_11) 
+
+#define UHF_RX_TYPE      (GPIOE) // filter stage for UHF receiver
+#define UHF_RX_PIN       (GPIO_PINS_12) // active high
+
+#define HF_RX_TYPE       (GPIOE) // filter stage for HF receiver
+#define HF_RX_PIN        (GPIO_PINS_13) // active high
+
+#define HF_TX_TYPE       (GPIOE) // filter stage for HF transmitter
+#define HF_TX_PIN        (GPIO_PINS_14) // active high
+
+#define BK4829B_SCN_TYPE (GPIOE) // BK4829B chip select
+#define BK4829B_SCN_PIN  (GPIO_PINS_15) 
+
+// HF < 70 MHz
+// VHF < 280 MHz
+// UHF > 280 MHz
+
+
+the display is a ST7789 controller with a parallel interface.
+the display is a portrait orientation with a resolution of 240x320 pixels.
+the display panel operates inverted, so the ST7789 controller needs to be set inverted to attain normal color operation
+
+
+The 4MB flash chip is a standard W25Q32 and follows the stadard protocol for that family of chips.
+
+
+The SI4732 is as standard, information on operation is freely available from the manufacturer and various online resources.
+
+
+the Radio SOCs are BK4829 series chips, the radio utilizes deal chips, with BK4829A responsible for operation on VHF,
+BK4829B is responsible for operation on UHF and HF.
+When operating on HF, the RELAY must be set high to properly route the signal through the HF filter stage.
+The relay MUST be set low when operating the the Si4732 this makes it impossible to monitor HF frequencies on the BK4829B
+simultaneously. Many radios implement an "interrupt" mechanism when the Si4732 is active to temporarily switch to regular
+BK4829 radio mode when activity on the normal radio mode is detected. This cannot be done with HF BK4829B operation.
+
+There is documentation for the BK4829 series chips available, and the PDF for the register table is attached, however, there
+are undocumented registers and register bits, so there follows a set of register setting values that were captured from
+a working radio, to provide reference values for proper operation.
+
+Standard initialization sequence example
+    bkSetReg(0x00, 0x8000);
+    bkSetReg(0x00, 0x0000);
+    bkSetReg(0x37, 0x9D1F);
+    bkSetReg(0x13, 0x03DF);
+    bkSetReg(0x12, 0x03DB);
+    bkSetReg(0x11, 0x033A);
+    bkSetReg(0x10, 0x0318);
+    bkSetReg(0x14, 0x0210);
+    bkSetReg(0x49, 0x2AB2);
+    bkSetReg(0x7B, 0x73DC);
+    bkSetReg(0x1C, 0x07C0);
+    bkSetReg(0x1D, 0xE555);
+    bkSetReg(0x1E, 0x4C58);
+    bkSetReg(0x1F, 0x865A);
+    bkSetReg(0x3E, 0x94C6);
+    bkSetReg(0x3F, 0x07FE);
+    bkSetReg(0x25, 0xC1BA);
+    bkSetReg(0x3A, 0x9A7C);
+    bkSetReg(0x19, 0x1041);
+    bkSetReg(0x28, 0x0B40);
+    bkSetReg(0x29, 0xAA00);
+    bkSetReg(0x2A, 0x6600);
+    bkSetReg(0x2C, 0x0022);
+    bkSetReg(0x2F, 0x9890);
+    bkSetReg(0x53, 0x2028);
+    bkSetReg(0x7E, 0x303E);
+    bkSetReg(0x46, 0x6050);
+    bkSetReg(0x4A, 0x5430);
+    bkSetReg(0x48, 0xB3BF);
+    bkSetReg(0x49, 0x2AB2);
+    bkSetReg(0x4A, 0x5430);
+    bkSetReg(0x4D, 0xA004);
+    bkSetReg(0x4E, 0x3815);
+    bkSetReg(0x4F, 0x3F3B);
+    bkSetReg(0x77, 0xCCEF);
+    bkSetReg(0x7E, 0x303E);
+    bkSetReg(0x40, 0x34D2);
+    bkSetReg(0x7D, 0xE912);
+    bkSetReg(0x48, 0xB3FF);
+    bkSetReg(0x09, 0x006F);
+    bkSetReg(0x09, 0x106B);
+    bkSetReg(0x09, 0x2067);
+    bkSetReg(0x09, 0x3062);
+    bkSetReg(0x09, 0x4050);
+    bkSetReg(0x09, 0x5047);
+    bkSetReg(0x09, 0x603A);
+    bkSetReg(0x09, 0x702C);
+    bkSetReg(0x09, 0x8041);
+    bkSetReg(0x09, 0x9037);
+    bkSetReg(0x09, 0xA025);
+    bkSetReg(0x09, 0xB017);
+    bkSetReg(0x09, 0xC0E4);
+    bkSetReg(0x09, 0xD0CB);
+    bkSetReg(0x09, 0xE0B5);
+    bkSetReg(0x09, 0xF09F);
+    bkSetReg(0x74, 0xDF22);
+    bkSetReg(0x44, 0x91C1);
+    bkSetReg(0x45, 0x3040);
+    bkSetReg(0x75, 0xE61C);
+    bkSetReg(0x54, 0x91C1);
+    bkSetReg(0x55, 0x3040);
+    bkSetReg(0x47, 0x6042);
+    bkSetReg(0x48, 0xB2BF);
+    bkSetReg(0x30, 0x0000);
+
+
+    Receieve mode initialization sequence example for FM
+    bkSetReg(0x78, 0x0000);
+    bkSetReg(0x4F, 0x2A29);
+    bkSetReg(0x51, 0x9046);
+    bkSetReg(0x07, 0x0471);
+    bkSetReg(0x07, 0x21CD);
+    bkSetReg(0x52, 0x0292);
+    bkSetReg(0x40, 0x350A);
+    bkSetReg(0x24, 0x87FF);
+    bkSetReg(0x58, 0x3FC3);
+    bkSetReg(0x72, 0x3065);
+    bkSetReg(0x70, 0x00EC);
+    bkSetReg(0x5D, 0x0D00);
+    bkSetReg(0x59, 0x4028);
+    bkSetReg(0x59, 0x1028);
+    bkSetReg(0x5A, 0xFB72);
+    bkSetReg(0x5B, 0x4099);
+    bkSetReg(0x5C, 0xA730);
+    bkSetReg(0x48, 0xB33C);
+    bkSetReg(0x47, 0x6142);
+    bkSetReg(0x2b, 0x0000); 
+    bkSetReg(0x31, 0x0000);
+    bkSetReg(0x37, 0x9F1F);
+    bkSetReg(0x30, 0x0000);
+    bkSetReg(0x39, high_freq_word); // set 16 bit radio chip frequency registers
+    bkSetReg(0x38, low_freq_word); // frequencies are in 10 Hz units.  
+    bkSetReg(0x30, 0xBFF1);  
+    
+
+    tranmit mode initialization sequence example for FM
+    bkSetReg(0x70, 0x0000);
+    bkSetReg(0x58, 0x0000);
+    bkSetReg(0x3F, 0x0000);
+    bkSetReg(0x59, 0x0028);
+    bkSetReg(0x70, 0x0000);
+    bkSetReg(0x58, 0x0000);
+    bkSetReg(0x70, 0x0000);
+    bkSetReg(0x58, 0x0000);
+    bkSetReg(0x3F, 0x0000);
+    bkSetReg(0x59, 0x0028);
+    bkSetReg(0x70, 0x0000);
+    bkSetReg(0x58, 0x0000);
+    bkSetReg(0x24, 0x87DF);
+    bkSetReg(0x70, 0x0000);
+    bkSetReg(0x31, 0x0000);
+    bkSetReg(0x40, 0x350A);
+    bkSetReg(0x47, 0x6042);
+    bkSetReg(0x48, 0xB2BF);
+    bkSetReg(0x37, 0x9D1F);
+    bkSetReg(0x47, 0x6042);
+    bkSetReg(0x48, 0xB2BF);
+    bkSetReg(0x37, 0x9D1F);
+    bkSetReg(0x30, 0x0000);
+    bkSetReg(0x47, 0x6142);
+    bkSetReg(0x43, 0x3028);
+    bkSetReg(0x30, 0x0000);
+    bkSetReg(0x51, 0x0000);
+    bkSetReg(0x52, 0x0292);
+    bkSetReg(0x51, 0x0000);
+    bkSetReg(0x7D, 0xE924);
+    bkSetReg(0x31, 0x0000);
+    bkSetReg(0x40, 0x350A);
+    bkSetReg(0x30, 0x0200);
+    bkSetReg(0x24, 0x87DF);
+    bkSetReg(0x70, 0x0000);
+    bkSetReg(0x31, 0x0000);
+    bkSetReg(0x40, 0x350A);
+    // squelch tones are set as per the PDF
+    bkSetReg(0x31, 0x0000);
+    bkSetReg(0x7d, 0xe93F);
+    bkSetReg(0x36, 0x007F);
+    bkSetReg(0x36, 0x007F);
+    bkSetReg(0x30, 0xC1FE);        
+
+    cross reference these register set example captures, preserve any undocumented registers and register bits,
+    parameterize everything else.
+
+
+This should be enough to create a functional firmware. Implement the basic 3 VFO setup.
+create a menu system to adjust common setttings.
+create frequency and channel operating modes.
+implement basic transmit and receive functionality.
+implement an operation mode for the si4732 tuner.
+implement basic GPS functionality.
+implement APRS beacon functionality for transmit and receive.
+You will need to create a user interface to navigate the menu system and control the various functionalities.
+Create various size fixed width fonts for the user interface and implement them appropriately in the user interface.
+implement squelch tones as per the PDF for receive and transmit operations.
+implement bandwidth control for receive and transmit operations.
+you may utilize the W25Q32 flash memory for storing configuration settings and other persistent data, the addressing I'll leave up to you.
+
+The attached project is a correctly configured Keil project already setup for the MCU being used in the radio, use this project to implement the firmware source code.
+The MCU is an ArteryTek AT32A403AVGT7 and is able to run at 200 MHz, it should be configured at this speed.
+
+There is a 0x800 byte reserved area at the start of RAM, use this to clone and relocate the vector table (VTOR) for interrupt handling.
+
+In the main project folder is a PDF (BK4829.Registers.Table.pdf) listing all documented registers for the BK4829 chip.
+
+Information on all other hardware is freely available online.
+
+
