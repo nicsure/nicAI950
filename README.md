@@ -1,3 +1,14 @@
+# Please note
+Issues are disabled as I'm not actually developing this, it was an hour long project to see what Codex could come up with and to let others play with it.
+
+I have not tested hardly anything other than basic receive and transmit. APRS is not tested and neither is the Si4732 tuner mode. Feel free to grab the source and continue with the AI of your choice to further add features and fix issues. I'm outta here.
+
+---
+Link to AI Chat history
+https://chatgpt.com/s/cx_6b061c9e0dd88191867d9af105d2c5d3
+
+---
+
 # nicAI950
 
 nicAI950 is firmware for the **Radtel RT-950 Pro** handheld radio. It runs on the ArteryTek AT32A403AVGT7 and uses the radio's existing bootloader.
