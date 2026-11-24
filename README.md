@@ -1,7 +1,11 @@
 # Please note
 Issues are disabled as I'm not actually developing this, it was an hour long project to see what Codex could come up with and to let others play with it.
 
-I have not tested hardly anything other than basic receive and transmit. APRS is not tested and neither is the Si4732 tuner mode. Feel free to grab the source and continue with the AI of your choice to further add features and fix issues. I'm outta here.
+I have not tested hardly anything other than basic receive and transmit. APRS is not tested and neither is the Si4732 tuner mode. Feel free to grab the source and continue with the AI of your choice to further add features and fix issues.
+
+This is a Keil project, but I suspect any AI will have no problem converting it to another tool-chain, just ask your friendly neighbourhood LLM.
+
+## I'm outta here.
 
 ---
 Link to AI Chat history
