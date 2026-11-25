@@ -7,6 +7,10 @@ This is a Keil project, but I suspect any AI will have no problem converting it 
 https://github.com/nicsure/Hex2BTF950  
 Any AI would have no trouble creating a Python script or similar equivalent for different tool chains.  
 
+If you prefer a GCC based tool-chain, I asked Codex to convert the project to GCC. The GCC version of this project is here:  
+https://github.com/nicsure/nicAI950_gcc  
+I only confirmed the project builds, flashes and runs on the 950, nothing else.
+
 ## I'm outta here.
 
 ---
