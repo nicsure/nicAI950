@@ -3,7 +3,9 @@ Issues are disabled as I'm not actually developing this, it was an hour long pro
 
 I have not tested hardly anything other than basic receive and transmit. APRS is not tested and neither is the Si4732 tuner mode. Feel free to grab the source and continue with the AI of your choice to further add features and fix issues.
 
-This is a Keil project, but I suspect any AI will have no problem converting it to another tool-chain, just ask your friendly neighbourhood LLM.
+This is a Keil project, but I suspect any AI will have no problem converting it to another tool-chain, just ask your friendly neighbourhood LLM. The converter application 'Hex2Btf950.exe' is a windows application, but it is written in Visual Studio as a console project and so can be compiled for Linux or macOS. The project source code for this application is here:
+https://github.com/nicsure/Hex2BTF950
+Any AI would have no trouble creating a Python script or similar equivalent for different tool chains.
 
 ## I'm outta here.
 
