@@ -25,8 +25,8 @@ typedef struct {
 } TunerRange;
 
 extern const TunerRange tuner_ranges[TUNER_BANDS];
-bool tuner_tune(TunerBand band, uint16_t frequency);
-bool tuner_volume(uint8_t volume);
+/* NULL on success or a diagnostic to show on the broadcast screen. */
+const char *tuner_tune(TunerBand band, uint16_t frequency, uint8_t volume);
 void tuner_stop(void);
 
 bool storage_load(void *data, size_t length);

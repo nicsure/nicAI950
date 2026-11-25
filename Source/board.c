@@ -98,7 +98,7 @@ static void gpio_setup(void)
     gpio_pin_remap_config(SWJTAG_GMUX_010, TRUE);
 
     outputs(GPIOA, PIN(7) | PIN(8) | PIN(11) | PIN(15), PIN(6));
-    outputs(GPIOB, PIN(8) | PIN(12), PIN(0) | PIN(1) | PIN(3) | PIN(9));
+    outputs(GPIOB, PIN(6) | PIN(8) | PIN(12), PIN(0) | PIN(1) | PIN(3) | PIN(9));
     outputs(GPIOC, 0, PIN(4) | PIN(5) | PIN(6) | PIN(12) | PIN(13) | PIN(14));
     outputs(GPIOD, PIN(0) | PIN(1) | PIN(2) | PIN(3), 0xff00u);
     outputs(GPIOE, PIN(1) | BK_SELECT_A | BK_SELECT_B | BK_CLOCK | BK_DATA,
@@ -108,15 +108,12 @@ static void gpio_setup(void)
     GPIO_HIGH(GPIOC, 0x000fu);
     board_pin_mode(GPIOC, 0x000fu, GPIO_MODE_OUTPUT, GPIO_PULL_NONE, GPIO_OUTPUT_OPEN_DRAIN);
     inputs(GPIOA, PIN(10) | PIN(12));
-    inputs(GPIOB, PIN(4) | PIN(5) | PIN(11) | PIN(14));
+    inputs(GPIOB, PIN(4) | PIN(5) | PIN(7) | PIN(11) | PIN(14));
     inputs(GPIOC, PIN(15));
     inputs(GPIOD, 0x00f0u);
     inputs(GPIOE, PIN(0) | PIN(2) | PIN(3) | PIN(5) | PIN(6));
     board_pin_mode(GPIOA, PIN(0) | PIN(1) | PIN(2) | PIN(4) | PIN(5),
                    GPIO_MODE_ANALOG, GPIO_PULL_NONE, GPIO_OUTPUT_PUSH_PULL);
-    GPIO_HIGH(GPIOB, PIN(6) | PIN(7));
-    board_pin_mode(GPIOB, PIN(6) | PIN(7), GPIO_MODE_OUTPUT,
-                   GPIO_PULL_NONE, GPIO_OUTPUT_OPEN_DRAIN);
 }
 
 static void backlight_init(void)

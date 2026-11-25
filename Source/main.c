@@ -65,8 +65,8 @@ static Screen screen;
 static Menu menu;
 static Transmit tx;
 static RadioConfig applied;
-static bool rf_valid, tuner_ok, settings_dirty;
-static const char *save_error;
+static bool rf_valid, settings_dirty;
+static const char *save_error, *tuner_error;
 static bool redraw = true, clear_screen = true, previous_ptt = true;
 static uint32_t last_change, tx_start, rx_started, last_busy, last_beacon;
 static char entry[11], call_edit[7];
@@ -186,9 +186,7 @@ static void refresh_rf(void)
 static void tune_broadcast(void)
 {
     TunerBand band = (TunerBand)settings.tuner_band;
-    tuner_ok = tuner_tune(band, settings.tuner_freq[band]) && tuner_volume(settings.volume);
-    if (!tuner_ok)
-        tuner_stop();
+    tuner_error = tuner_tune(band, settings.tuner_freq[band], settings.volume);
     redraw = true;
 }
 
@@ -387,7 +385,7 @@ static void draw_tuner(void)
     line(127, COLOR_DIM, band == TUNER_FM ? "MHZ" : "KHZ");
     snprintf(text, sizeof(text), "VOLUME %u", settings.volume);
     line(175, COLOR_TEXT, text);
-    small(211, tuner_ok ? COLOR_ACCENT : COLOR_TX, tuner_ok ? "RECEIVING" : "TUNER DID NOT RESPOND");
+    small(211, tuner_error ? COLOR_TX : COLOR_ACCENT, tuner_error ? tuner_error : "RECEIVING");
     footer("L/R BAND   U/D TUNE   MENU RETRY");
 }
 

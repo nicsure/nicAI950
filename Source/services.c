@@ -147,55 +147,85 @@ const TunerRange tuner_ranges[TUNER_BANDS] = {
 
 static uint8_t si_address;
 static bool si_powered, si_fm;
-static bool i2c_fault;
 
-static void i2c_clock(void)
+/* The tuner takes SCL as an input. SDA is bidirectional and needs the
+   MCU's pull-up when released on the RT-950 Pro. */
+static void i2c_sda_release(void)
 {
-    GPIO_HIGH(GPIOB, SI_SCL);
-    for (unsigned i = 0; i < 100; ++i) {
-        if (GPIO_READ(GPIOB, SI_SCL)) {
-            board_delay_us(5);
-            return;
-        }
-        board_delay_us(1);
-    }
-    i2c_fault = true;
+    board_pin_mode(GPIOB, SI_SDA, GPIO_MODE_INPUT,
+                   GPIO_PULL_UP, GPIO_OUTPUT_OPEN_DRAIN);
 }
 
-static void i2c_start(void)
+static void i2c_sda_low(void)
 {
-    i2c_fault = false;
-    GPIO_HIGH(GPIOB, SI_SDA);
-    i2c_clock();
     GPIO_LOW(GPIOB, SI_SDA);
+    board_pin_mode(GPIOB, SI_SDA, GPIO_MODE_OUTPUT,
+                   GPIO_PULL_NONE, GPIO_OUTPUT_OPEN_DRAIN);
+}
+
+static void i2c_clock_high(void)
+{
+    GPIO_HIGH(GPIOB, SI_SCL);
+    board_delay_us(5);
+}
+
+static bool i2c_start(void)
+{
+    i2c_sda_release();
+    i2c_clock_high();
+    if (!GPIO_READ(GPIOB, SI_SCL) || !GPIO_READ(GPIOB, SI_SDA))
+        return false;
+    i2c_sda_low();
     board_delay_us(5);
     GPIO_LOW(GPIOB, SI_SCL);
+    board_delay_us(5);
+    return true;
 }
 
 static void i2c_stop(void)
 {
-    GPIO_LOW(GPIOB, SI_SDA);
+    i2c_sda_low();
     board_delay_us(5);
-    i2c_clock();
-    GPIO_HIGH(GPIOB, SI_SDA);
+    i2c_clock_high();
+    i2c_sda_release();
     board_delay_us(5);
+}
+
+static bool i2c_recover(void)
+{
+    i2c_sda_release();
+    i2c_clock_high();
+    if (!GPIO_READ(GPIOB, SI_SCL))
+        return false;
+    if (GPIO_READ(GPIOB, SI_SDA))
+        return true;
+
+    /* A slave left mid-byte can release SDA after up to nine clocks. */
+    for (unsigned i = 0; i < 9 && !GPIO_READ(GPIOB, SI_SDA); ++i) {
+        GPIO_LOW(GPIOB, SI_SCL);
+        board_delay_us(5);
+        i2c_clock_high();
+    }
+    GPIO_LOW(GPIOB, SI_SCL);
+    i2c_stop();
+    return GPIO_READ(GPIOB, SI_SCL) && GPIO_READ(GPIOB, SI_SDA);
 }
 
 static bool i2c_write(uint8_t data)
 {
     for (unsigned mask = 0x80; mask; mask >>= 1) {
         if (data & mask)
-            GPIO_HIGH(GPIOB, SI_SDA);
+            i2c_sda_release();
         else
-            GPIO_LOW(GPIOB, SI_SDA);
+            i2c_sda_low();
         board_delay_us(5);
-        i2c_clock();
+        i2c_clock_high();
         GPIO_LOW(GPIOB, SI_SCL);
     }
-    GPIO_HIGH(GPIOB, SI_SDA);
+    i2c_sda_release();
     board_delay_us(5);
-    i2c_clock();
-    bool ack = !GPIO_READ(GPIOB, SI_SDA) && !i2c_fault;
+    i2c_clock_high();
+    bool ack = !GPIO_READ(GPIOB, SI_SDA);
     GPIO_LOW(GPIOB, SI_SCL);
     return ack;
 }
@@ -203,41 +233,43 @@ static bool i2c_write(uint8_t data)
 static uint8_t i2c_read(bool ack)
 {
     uint8_t data = 0;
-    GPIO_HIGH(GPIOB, SI_SDA);
+    i2c_sda_release();
     for (unsigned i = 0; i < 8; ++i) {
         board_delay_us(5);
-        i2c_clock();
+        i2c_clock_high();
         data = (uint8_t)((data << 1) | GPIO_READ(GPIOB, SI_SDA));
         GPIO_LOW(GPIOB, SI_SCL);
     }
     if (ack)
-        GPIO_LOW(GPIOB, SI_SDA);
+        i2c_sda_low();
     board_delay_us(5);
-    i2c_clock();
+    i2c_clock_high();
     GPIO_LOW(GPIOB, SI_SCL);
-    GPIO_HIGH(GPIOB, SI_SDA);
+    i2c_sda_release();
     return data;
 }
 
 static bool si_write(const uint8_t *bytes, unsigned count)
 {
-    i2c_start();
+    if (!i2c_start())
+        return false;
     bool ok = i2c_write(si_address << 1);
     for (unsigned i = 0; i < count && ok; ++i)
         ok = i2c_write(bytes[i]);
     i2c_stop();
-    return ok && !i2c_fault;
+    return ok;
 }
 
 static bool si_read(uint8_t *bytes, unsigned count)
 {
-    i2c_start();
+    if (!i2c_start())
+        return false;
     bool ok = i2c_write((si_address << 1) | 1u);
     if (ok)
         for (unsigned i = 0; i < count; ++i)
             bytes[i] = i2c_read(i + 1 < count);
     i2c_stop();
-    return ok && !i2c_fault;
+    return ok;
 }
 
 static bool si_ready(unsigned timeout, uint8_t *response)
@@ -245,14 +277,10 @@ static bool si_ready(unsigned timeout, uint8_t *response)
     uint32_t start = board_ms();
     do {
         uint8_t status;
-        if (si_read(&status, 1)) {
-            if (status & SI_ERR)
-                return false;
-            if (status & SI_CTS) {
-                if (response)
-                    *response = status;
-                return true;
-            }
+        if (si_read(&status, 1) && (status & SI_CTS)) {
+            if (response)
+                *response = status;
+            return (status & SI_ERR) == 0;
         }
         board_delay_ms(2);
     } while (board_ms() - start < timeout);
@@ -264,19 +292,21 @@ static bool si_command(const uint8_t *bytes, unsigned count)
     return si_write(bytes, count) && si_ready(100, NULL);
 }
 
-static bool si_wait_tune(void)
+static const char *si_wait_tune(bool fm)
 {
     const uint8_t command = 0x14; /* GET_INT_STATUS latches STC into the reply. */
     uint32_t start = board_ms();
     do {
         uint8_t status;
         if (!si_write(&command, 1) || !si_ready(20, &status))
-            return false;
-        if (status & SI_STC)
-            return true;
+            return "TUNER STATUS FAILED";
+        if (status & SI_STC) {
+            uint8_t ack[] = {fm ? 0x22 : 0x42, 1};
+            return si_command(ack, sizeof(ack)) ? NULL : "TUNER STATUS FAILED";
+        }
         board_delay_ms(5);
     } while (board_ms() - start < 650);
-    return false;
+    return "TUNER TUNE TIMEOUT";
 }
 
 void tuner_stop(void)
@@ -288,65 +318,65 @@ void tuner_stop(void)
     si_powered = false;
 }
 
-static bool si_start(bool fm)
+static const char *si_start(bool fm)
 {
     tuner_stop();
-    board_delay_ms(2);
+    if (fm) {
+        GPIO_LOW(GPIOA, PIN(7));
+    } else {
+        GPIO_HIGH(GPIOC, PIN(5));
+    }
+    board_delay_ms(10);
     GPIO_HIGH(GPIOA, PIN(6));
-    board_delay_ms(3);
+    board_delay_ms(10);
+    if (!i2c_recover())
+        return "TUNER I2C BUS HELD LOW";
 
-    /* Support either SEN strap. Use the Si4732 crystal oscillator and analog audio. */
+    /* After reset, POWER_UP is the first command. CTS is checked afterwards.
+       Use the crystal oscillator and analog audio output. */
     const uint8_t addresses[] = {0x11, 0x63};
+    uint8_t power[] = {0x01, fm ? 0x10 : 0x11, 0x05};
     for (unsigned i = 0; i < sizeof(addresses); ++i) {
         si_address = addresses[i];
-        if (si_ready(8, NULL)) {
-            uint8_t power[] = {0x01, fm ? 0x10 : 0x11, 0x05};
-            uint32_t started = board_ms();
-            if (!si_write(power, sizeof(power)) || !si_ready(550, NULL))
-                break;
-            uint32_t elapsed = board_ms() - started;
-            if (elapsed < 500)
-                board_delay_ms(500 - elapsed);
-            si_powered = true;
-            si_fm = fm;
-            return true;
-        }
+        if (!si_write(power, sizeof(power)))
+            continue;
+        uint8_t status = 0;
+        if (!si_ready(500, &status))
+            return status & SI_ERR ? "TUNER POWER-UP REJECTED" : "TUNER POWER-UP TIMEOUT";
+        board_delay_ms(500);
+        si_powered = true;
+        si_fm = fm;
+        return NULL;
     }
-    tuner_stop();
-    return false;
+    return "TUNER NO I2C ACK";
 }
 
-bool tuner_volume(uint8_t volume)
+static bool si_volume(uint8_t volume)
 {
     uint8_t set[] = {0x12, 0, 0x40, 0, 0, volume};
-    return si_powered && si_command(set, sizeof(set));
+    return si_command(set, sizeof(set));
 }
 
-bool tuner_tune(TunerBand band, uint16_t frequency)
+const char *tuner_tune(TunerBand band, uint16_t frequency, uint8_t volume)
 {
     bool fm = band == TUNER_FM;
     board_audio(false, false);
-    if ((!si_powered || fm != si_fm) && !si_start(fm))
-        return false;
-
-    if (fm) {
-        GPIO_LOW(GPIOA, PIN(7));
-        GPIO_LOW(GPIOC, PIN(5));
-    } else {
-        GPIO_HIGH(GPIOA, PIN(7));
-        GPIO_HIGH(GPIOC, PIN(5));
-    }
+    const char *error = !si_powered || fm != si_fm ? si_start(fm) : NULL;
     uint8_t tune[] = {fm ? 0x20 : 0x40, 0, (uint8_t)(frequency >> 8),
                       (uint8_t)frequency, 0, band == TUNER_SW ? 1 : 0};
-    uint8_t ack[] = {fm ? 0x22 : 0x42, 1};
-    if (!si_command(tune, fm ? 5 : 6) || !si_wait_tune() ||
-        !si_command(ack, sizeof(ack))) {
-        tuner_stop();
-        return false;
+    if (!error) {
+        if (!si_volume(volume))
+            error = "TUNER VOLUME FAILED";
+        else if (!si_command(tune, fm ? 5 : 6))
+            error = "TUNER TUNE COMMAND FAILED";
+        else
+            error = si_wait_tune(fm);
     }
-
-    board_audio(false, true);
-    return true;
+    if (error)
+        tuner_stop();
+    else
+        board_audio(false, true);
+    return error;
 }
 
 #define FLASH_CS PIN(12)
