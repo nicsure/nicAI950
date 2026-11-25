@@ -9,7 +9,7 @@ Any AI would have no trouble creating a Python script or similar equivalent for 
 
 If you prefer a GCC based tool-chain, I asked Codex to convert the project to GCC. The GCC version of this project is here:  
 https://github.com/nicsure/nicAI950_gcc  
-I only confirmed the project builds, flashes and runs on the 950, nothing else.
+I only confirmed the GCC project builds, flashes and runs on the 950, nothing else.
 
 ## I'm outta here.
 
